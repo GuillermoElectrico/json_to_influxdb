@@ -9,7 +9,7 @@ import time
 import yaml
 import logging
 import subprocess
-import json
+import ast
 
 # Change working dir to the same dir as this script
 os.chdir(sys.path[0])
@@ -40,32 +40,38 @@ class DataCollector:
     def read_and_store(self, filelog_json):
         influxdb = self.get_influxdb()
         
-        log.info('Open file as json {}' .format(filelog_json))
+        log.info('Open file {}' .format(filelog_json))
         
-        with open(filelog_json, 'r') as json_file:
-            json_body = json.loads(json_file)
+        json_body = dict()
         
-            if len(json_body) > 0:
+        with open(filelog_json, 'r') as file:
+            list = 0
+            for line in file:
+                list = list + 1
+#                log.debug(line)
+                json_body = ast.literal_eval(line)
+    
+                if len(json_body) > 0:
 
-                #log.debug(json_body)
+ #                   log.debug(json_body)
 
-                for influx_config in influxdb:
+                    for influx_config in influxdb:
 
-                    DBclient = InfluxDBClient(influx_config['host'],
-                                            influx_config['port'],
-                                            influx_config['user'],
-                                            influx_config['password'],
-                                            influx_config['dbname'])
-                    try:
-                        DBclient.write_points(json_body)
-                        log.info(t_str + ' Data written for %d records.' % len(json_body) )
-                    except Exception as e:
-                        log.error('Data not written! in {}' .format(influx_config['name']))
-                        log.error(e)
-                        raise
-            else:
-                log.warning(t_str, 'No data sent.')
-
+                        DBclient = InfluxDBClient(influx_config['host'],
+                                                influx_config['port'],
+                                                influx_config['user'],
+                                                influx_config['password'],
+                                                influx_config['dbname'])
+                        try:
+                            DBclient.write_points(json_body)
+                            log.info('Data written in {}' .format(influx_config['name']))
+                        except Exception as e:
+                            log.error('Data not written! in {}' .format(influx_config['name']))
+                            log.error(e)
+                            raise
+                else:
+                    log.warning('No data sent.')
+            log.info('Read %d records from file.' % list )
             
 
 if __name__ == '__main__':
@@ -73,7 +79,8 @@ if __name__ == '__main__':
     import argparse
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--filelog', default="localhost", help='file containing log in json format. Default "log00000.log"')
+    parser.add_argument('--filelog', default="log00000.log", 
+                        help='file containing log in json format. Default "log00000.log"')
     parser.add_argument('--influxdb', default='influx_config.yml',
                         help='YAML file containing Influx Host, port, user etc. Default "influx_config.yml"')
     parser.add_argument('--log', default='CRITICAL',

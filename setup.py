@@ -10,7 +10,7 @@ except ImportError:
     with io.open('README.md', encoding="utf-8") as f:
         readme = f.read()
 
-setup(name='modbus_logger',
+setup(name='json_to_influxdb',
       version=1.1,
       description='Store json log menssages in influxdb database ',
       long_description=readme,
@@ -26,8 +26,8 @@ setup(name='modbus_logger',
         'Operating System :: Raspbian',
         'Programming Language :: Python :: 3.5'
       ],
-      keywords='Digital Inputs Logger Pi',
-      install_requires=[]+(['setuptools', 'pyyaml', 'ez_setup', 'influxdb', 'paho-mqtt'] if "linux" in sys.platform else []),
+      keywords='json file to InfluxDB logger',
+      install_requires=[]+(['setuptools', 'pyyaml', 'ez_setup', 'influxdb'] if "linux" in sys.platform else []),
       license='MIT',
       packages=[],
       include_package_data=True,
