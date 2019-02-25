@@ -38,7 +38,7 @@ class DataCollector:
         return self.influx_map
        
 
-    def read_and_store(self, pathlog_json, pathold_log):
+    def read_and_store(self, pathlog_json, pathold_log, extension_log):
         influxdb = self.get_influxdb()
         
         log.info('Find log files in path {}' .format(pathlog_json))
@@ -49,7 +49,7 @@ class DataCollector:
         filelist = 0
         
         for filename in os.listdir(pathlog_json):
-            if filename.endswith('.log'):
+            if filename.endswith(extension_log):
                 filelist = filelist + 1
                 
                 log.info('File Processed {}' .format(filename))
@@ -96,9 +96,11 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--path', default=sys.path[0], 
-                        help='Path to containing files with extension .log . Default "same/dir/as/this/script"')
+                        help='Path to containing files with extension definied . Default "same/dir/as/this/script"')
     parser.add_argument('--pathold', default=sys.path[0]+"/.old", 
-                        help='Path to containing files Processed . Default "same/dir/as/this/script/.old"')
+                        help='Path to containing files processed . Default "same/dir/as/this/script/.old"')
+    parser.add_argument('--extension', default=".log", 
+                        help='Extension file to processed . Default ".log"')
     parser.add_argument('--influxdb', default='influx_config.yml',
                         help='YAML file containing Influx Host, port, user etc. Default "influx_config.yml"')
     parser.add_argument('--log', default='CRITICAL',
@@ -126,7 +128,7 @@ if __name__ == '__main__':
     
     collector = DataCollector(influx_yaml=args.influxdb)
     
-    collector.read_and_store(pathlog_json=args.path,pathold_log=args.pathold)
+    collector.read_and_store(pathlog_json=args.path,pathold_log=args.pathold,extension_log=args.extension)
 
     print('End app')
 
