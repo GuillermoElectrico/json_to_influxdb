@@ -10,6 +10,7 @@ import yaml
 import logging
 import subprocess
 import ast
+import shutil
 
 # Change working dir to the same dir as this script
 os.chdir(sys.path[0])
@@ -37,50 +38,67 @@ class DataCollector:
         return self.influx_map
        
 
-    def read_and_store(self, filelog_json):
+    def read_and_store(self, pathlog_json, pathold_log):
         influxdb = self.get_influxdb()
         
-        log.info('Open file {}' .format(filelog_json))
+        log.info('Find log files in path {}' .format(pathlog_json))
+        log.info('Copy log files Processed in path {}' .format(pathold_log))
         
         json_body = dict()
         
-        with open(filelog_json, 'r') as file:
-            list = 0
-            for line in file:
-                list = list + 1
-#                log.debug(line)
-                json_body = ast.literal_eval(line)
-    
-                if len(json_body) > 0:
-
- #                   log.debug(json_body)
-
-                    for influx_config in influxdb:
-
-                        DBclient = InfluxDBClient(influx_config['host'],
-                                                influx_config['port'],
-                                                influx_config['user'],
-                                                influx_config['password'],
-                                                influx_config['dbname'])
-                        try:
-                            DBclient.write_points(json_body)
-                            log.info('Data written in {}' .format(influx_config['name']))
-                        except Exception as e:
-                            log.error('Data not written! in {}' .format(influx_config['name']))
-                            log.error(e)
-                            raise
-                else:
-                    log.warning('No data sent.')
-            log.info('Read %d records from file.' % list )
+        filelist = 0
+        
+        for filename in os.listdir(pathlog_json):
+            if filename.endswith('.log'):
+                filelist = filelist + 1
+                
+                log.info('File Processed {}' .format(filename))
+                
+                with open(filename, 'r') as file:
+                    list = 0
+                    for line in file:
+                        list = list + 1
+        #                log.debug(line)
+                        json_body = ast.literal_eval(line)
             
+                        if len(json_body) > 0:
+
+         #                   log.debug(json_body)
+
+                            for influx_config in influxdb:
+
+                                DBclient = InfluxDBClient(influx_config['host'],
+                                                        influx_config['port'],
+                                                        influx_config['user'],
+                                                        influx_config['password'],
+                                                        influx_config['dbname'])
+                                try:
+                                    DBclient.write_points(json_body)
+                                    log.info('Data written in {}' .format(influx_config['name']))
+                                except Exception as e:
+                                    log.error('Data not written! in {}' .format(influx_config['name']))
+                                    log.error(e)
+                                    raise
+                        else:
+                            log.warning('No data sent.')
+                    print('Read %d records from file {}.' .format(filename) % list )
+                
+                if not os.path.exists(pathold_log):
+                    os.makedirs(pathold_log)
+                
+                shutil.move(filename, pathold_log + "/" + filename)
+                
+        print('Processed %d files from dir {}.' .format(pathlog_json) % filelist )
 
 if __name__ == '__main__':
 
     import argparse
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--filelog', default="log00000.log", 
-                        help='file containing log in json format. Default "log00000.log"')
+    parser.add_argument('--path', default=sys.path[0], 
+                        help='Path to containing files with extension .log . Default "same/dir/as/this/script"')
+    parser.add_argument('--pathold', default=sys.path[0]+"/.old", 
+                        help='Path to containing files Processed . Default "same/dir/as/this/script/.old"')
     parser.add_argument('--influxdb', default='influx_config.yml',
                         help='YAML file containing Influx Host, port, user etc. Default "influx_config.yml"')
     parser.add_argument('--log', default='CRITICAL',
@@ -104,13 +122,13 @@ if __name__ == '__main__':
 
     log.addHandler(loghandle)
 
-    log.info('Started app')
+    print('Started app')
     
     collector = DataCollector(influx_yaml=args.influxdb)
     
-    collector.read_and_store(filelog_json=args.filelog)
+    collector.read_and_store(pathlog_json=args.path,pathold_log=args.pathold)
 
-    log.info('End app')
+    print('End app')
 
     
 
