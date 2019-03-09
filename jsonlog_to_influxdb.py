@@ -41,47 +41,51 @@ class DataCollector:
     def read_and_store(self, pathlog_json, pathold_log, extension_log):
         influxdb = self.get_influxdb()
         
-        log.info('Find log files in path {}' .format(pathlog_json))
-        log.info('Copy log files Processed in path {}' .format(pathold_log))
+        print('Search log files in path {}' .format(pathlog_json))
+        print('Copy log files if processed in path {}' .format(pathold_log))
         
         json_body = dict()
         
         filelist = 0
+        list = 0
         
         for filename in os.listdir(pathlog_json):
             if filename.endswith(extension_log):
                 filelist = filelist + 1
                 
-                log.info('File Processed {}' .format(filename))
+                print('File processed {}' .format(filename))
                 
-                with open(filename, 'r') as file:
-                    list = 0
-                    for line in file:
-                        list = list + 1
-        #                log.debug(line)
-                        json_body = ast.literal_eval(line)
-            
-                        if len(json_body) > 0:
+                for influx_config in influxdb:
+                
+                    print('Send to {} db server' .format(influx_config['name']))
 
-         #                   log.debug(json_body)
+                    DBclient = InfluxDBClient(influx_config['host'],
+                                            influx_config['port'],
+                                            influx_config['user'],
+                                            influx_config['password'],
+                                            influx_config['dbname'])
+                
+                    with open(filename, 'r') as file:
+                        list = 0
+                        for line in file:
+                            list = list + 1
+            #                log.debug(line)
+                            json_body = ast.literal_eval(line)
+                
+                            if len(json_body) > 0:
 
-                            for influx_config in influxdb:
+             #                   log.debug(json_body)
 
-                                DBclient = InfluxDBClient(influx_config['host'],
-                                                        influx_config['port'],
-                                                        influx_config['user'],
-                                                        influx_config['password'],
-                                                        influx_config['dbname'])
-                                try:
-                                    DBclient.write_points(json_body)
-                                    log.info('Data written in {}' .format(influx_config['name']))
-                                except Exception as e:
-                                    log.error('Data not written! in {}' .format(influx_config['name']))
-                                    log.error(e)
-                                    raise
-                        else:
-                            log.warning('No data sent.')
-                    print('Read %d records from file {}.' .format(filename) % list )
+                                    try:
+                                        DBclient.write_points(json_body)
+                                        log.info('Data written in {}' .format(influx_config['name']))
+                                    except Exception as e:
+                                        log.error('Data not written! in {}' .format(influx_config['name']))
+                                        log.error(e)
+                                        raise
+                            else:
+                                log.warning('No data sent.')
+                print('Read %d records from file {}.' .format(filename) % list )
                 
                 if not os.path.exists(pathold_log):
                     os.makedirs(pathold_log)
@@ -124,13 +128,13 @@ if __name__ == '__main__':
 
     log.addHandler(loghandle)
 
-    print('Started app')
+    print('Started app at {}' .format(datetime.now()))
     
     collector = DataCollector(influx_yaml=args.influxdb)
     
     collector.read_and_store(pathlog_json=args.path,pathold_log=args.pathold,extension_log=args.extension)
 
-    print('End app')
+    print('End app at {}' .format(datetime.now()))
 
     
 
