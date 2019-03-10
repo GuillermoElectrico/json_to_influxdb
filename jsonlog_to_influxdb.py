@@ -11,6 +11,7 @@ import logging
 import subprocess
 import ast
 import shutil
+import json
 
 # Change working dir to the same dir as this script
 os.chdir(sys.path[0])
@@ -81,19 +82,41 @@ class DataCollector:
                             for line in file:
                                 list = list + 1
                 #                log.debug(line)
-                                json_body = ast.literal_eval(line)
-                    
+                #                json_body = ast.literal_eval(line)
+                                json_line = json.loads(line)
+                                
+                #                log.debug(json_line)
+                                
+                                for key in json_line.keys():
+                                    try:
+                                        json_line[key] = float(json_line[key])
+                                    except ValueError:
+                                        pass
+                                
+                                json_body = [
+                                    {
+                                        'measurement': json_line['h'],
+                                        'tags': {
+                                            'topic': json_line['t']
+                                        },
+                                        'time': json_line['d'],
+                                        'fields': {
+                                            'data':json_line['v']
+                                        }
+                                    }
+                                ]
+                                
                                 if len(json_body) > 0:
 
-                 #                   log.debug(json_body)
+                #                    log.debug(json_body)
 
-                                        try:
-                                            DBclient.write_points(json_body)
-                                            log.info('Data written in "{}"' .format(influx_config['name']))
-                                        except Exception as e:
-                                            log.error('Data not written! in "{}"' .format(influx_config['name']))
-                                            log.error(e)
-                                            raise
+                                    try:
+                                        DBclient.write_points(json_body)
+                                        log.info('Data written in "{}"' .format(influx_config['name']))
+                                    except Exception as e:
+                                        log.error('Data not written! in "{}"' .format(influx_config['name']))
+                                        log.error(e)
+                                        raise
                                 else:
                                     log.warning('No data sent.')
                     print('Read %d records from file "{}".' .format(filename) % list )
