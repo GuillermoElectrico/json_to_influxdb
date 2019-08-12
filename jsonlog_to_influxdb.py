@@ -56,7 +56,7 @@ class DataCollector:
         
         for pathdir in dirs:
     
-            print('Search log files in path "{}"' .format(pathlog_json +'/'+pathdir))
+            print('Search log files in path "{}"' .format(pathlog_json+pathdir))
         
             filelist = 0
             list = 0
