@@ -150,7 +150,7 @@ if __name__ == '__main__':
     logfile = args.logfile
 
     # Setup logging
-    log = logging.getLogger('mqtt2influx-logger')
+    log = logging.getLogger('json2influx-logger')
     log.setLevel(getattr(logging, loglevel))
 
     if logfile:
